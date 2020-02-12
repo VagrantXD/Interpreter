@@ -1,0 +1,43 @@
+/* parser.h */
+
+#ifndef PARSER_H
+#define PARSER_H
+
+#include <vector>
+
+class Expression;
+
+class Parser {
+    public:
+        Parser();
+
+        const int StateSize = 6;
+        enum State { LeftBracketState, RightBracketState, NumberState, FuncState, OperatorState, ErrorState };
+
+        Expression *parse(const std::string &expression);
+
+        static bool isLeftBracket(char ch);
+        static bool isRightBracket(char ch);
+        static bool isOperator(char ch);
+
+    private:
+        State leftBracketHandle(char ch);
+        State rightBracketHandle(char ch);
+        State operatorHandle(char ch);
+        State numberHandle(char ch);
+        State funcHandle(char ch);
+        State errorHandle(char ch);
+
+        void pushCurrent(char ch);
+
+    private:
+        State state;
+        std::vector< State (Parser::*)(char) > handles;
+
+        int bracketCount;
+        std::string current;
+
+        Expression *expr;
+};
+
+#endif // PARSER_H
