@@ -16,6 +16,7 @@ Parser::Parser()
     handles.push_back(&Parser::funcHandle);
     handles.push_back(&Parser::operatorHandle);
     handles.push_back(&Parser::errorHandle);
+    handles.push_back(&Parser::unaryOperatorHandle);
 }
 
 Expression *Parser::parse(const std::string &expression) {
@@ -29,15 +30,19 @@ Expression *Parser::parse(const std::string &expression) {
         state = (this->*handles[ state ])(x);
 
         if(iserror) {
+            delete expr;
             return nullptr;
         }
     }
 
-    if( state == State::ErrorState )
-        return nullptr;
+    state = (this->*handles[state])(')');
+    expr->addToken( Token(")", Token::Type::RightBracket) );
+    bracketCount++;
 
-    expr->addToken(current);
-    expr->addToken(")");
+    if( (state == State::ErrorState) || (bracketCount != 0) ) {
+        delete expr;
+        return nullptr;
+    }
 
     return expr;
 }
@@ -55,10 +60,10 @@ bool Parser::isOperator(char ch) {
 }
 
 Parser::State Parser::leftBracketHandle(char ch) {
-    pushCurrent(ch);
+    pushCurrent(ch, Token::Type::LeftBracket);
+    bracketCount--; 
 
     if( isLeftBracket(ch) ) {
-        bracketCount--; 
         return State::LeftBracketState;
     }
 
@@ -66,26 +71,26 @@ Parser::State Parser::leftBracketHandle(char ch) {
         return State::NumberState;
     }
 
-    if( std::isalpha(ch) ) {
-        return State::FuncState;
+    if( isOperator(ch) ) {
+        return State::UnaryOperatorState;
     }
 
-    if( isOperator(ch) ) {
-        return State::OperatorState;
+    if( std::isalpha(ch) ) {
+        return State::FuncState;
     }
 
     return State::ErrorState;
 }
 
 Parser::State Parser::rightBracketHandle(char ch) {
-    pushCurrent(ch);
+    pushCurrent(ch, Token::Type::RightBracket);
+    bracketCount++;
 
     if( isOperator(ch) ) {
         return State::OperatorState;
     }
 
     if( isRightBracket(ch) ) {
-        bracketCount++;
         return State::RightBracketState;
     }
 
@@ -93,10 +98,9 @@ Parser::State Parser::rightBracketHandle(char ch) {
 }
 
 Parser::State Parser::operatorHandle(char ch) {
-    pushCurrent(ch);
+    pushCurrent(ch, Token::Type::Operator);
 
     if( isLeftBracket(ch) ) {
-        bracketCount--;
         return State::LeftBracketState;
     }
 
@@ -113,12 +117,12 @@ Parser::State Parser::operatorHandle(char ch) {
 
 Parser::State Parser::numberHandle(char ch) {
     if( isOperator(ch) ) { 
-        pushCurrent(ch);
+        pushCurrent(ch, Token::Type::Constant);
         return State::OperatorState; 
     }
 
     if( isRightBracket(ch) ) {
-        pushCurrent(ch);
+        pushCurrent(ch, Token::Type::Constant);
         return State::RightBracketState;
     }
 
@@ -137,8 +141,26 @@ Parser::State Parser::funcHandle(char ch) {
     }
 
     if( isLeftBracket(ch) ) {
-        pushCurrent(ch);
+        pushCurrent(ch, Token::Type::Func);
         return State::LeftBracketState;
+    }
+
+    return State::ErrorState;
+}
+
+Parser::State Parser::unaryOperatorHandle(char ch) {
+    pushCurrent(ch, Token::Type::UnaryOperator);
+
+    if( isLeftBracket(ch) ) {
+        return State::LeftBracketState;
+    }
+
+    if( std::isdigit(ch) ) {
+        return State::NumberState;
+    }
+
+    if( std::isalpha(ch) ) {
+        return State::FuncState;
     }
 
     return State::ErrorState;
@@ -148,7 +170,7 @@ Parser::State Parser::errorHandle(char ch) {
     return State::ErrorState;
 }
 
-void Parser::pushCurrent(char ch) {
-    expr->addToken(current);
+void Parser::pushCurrent(char ch, Token::Type type) {
+    expr->addToken( Token(current, type) );
     current = ch;
 }

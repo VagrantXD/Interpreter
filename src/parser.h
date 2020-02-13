@@ -5,14 +5,15 @@
 
 #include <vector>
 
+#include "token.h"
+
 class Expression;
 
 class Parser {
     public:
         Parser();
 
-        const int StateSize = 6;
-        enum State { LeftBracketState, RightBracketState, NumberState, FuncState, OperatorState, ErrorState };
+        enum State { LeftBracketState, RightBracketState, NumberState, FuncState, OperatorState, ErrorState, UnaryOperatorState };
 
         Expression *parse(const std::string &expression);
 
@@ -27,8 +28,9 @@ class Parser {
         State numberHandle(char ch);
         State funcHandle(char ch);
         State errorHandle(char ch);
+        State unaryOperatorHandle(char ch);
 
-        void pushCurrent(char ch);
+        void pushCurrent(char ch, Token::Type type);
 
     private:
         State state;

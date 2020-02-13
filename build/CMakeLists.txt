@@ -8,12 +8,14 @@ set (SRC_PATH "../src")
 set (HEADERS 
     ${SRC_PATH}/expression.h
     ${SRC_PATH}/parser.h
+    ${SRC_PATH}/token.h
 ) 
 
 set (SOURCES
     ${SRC_PATH}/main.cpp
     ${SRC_PATH}/expression.cpp
     ${SRC_PATH}/parser.cpp
+    ${SRC_PATH}/token.cpp
 )
 
 project (${PROJECT})

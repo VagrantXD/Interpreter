@@ -5,6 +5,9 @@
 
 #include <vector>
 #include <string>
+#include <stack>
+
+#include "token.h"
 
 class Expression {
 
@@ -13,12 +16,18 @@ class Expression {
         ~Expression();
 
     public:
-        void addToken(const std::string &token);
+        double calculate();
 
-        const std::vector< std::string > *getTokens() const { return tokens; }
+        void addToken(const Token &token);
+
+        const std::vector< Token > *getTokens() const { return tokens; }
     
     private:
-        std::vector< std::string > *tokens;
+        void counting(std::stack< Token > &stack, const Token &currentOperator);
+
+    private:
+        std::vector< Token > *tokens;
+        std::map<std::string, int> *operationPriority;
 
 };
 
