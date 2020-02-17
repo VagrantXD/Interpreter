@@ -5,11 +5,7 @@
 #include "expression.h"
 #include "parser.h"
 
-Parser::Parser() 
-    : state( State::LeftBracketState ),
-      bracketCount( 0 ),
-      current("(")
-{
+Parser::Parser() {
     handles.push_back(&Parser::leftBracketHandle);
     handles.push_back(&Parser::rightBracketHandle);
     handles.push_back(&Parser::numberHandle); 
@@ -20,6 +16,8 @@ Parser::Parser()
 }
 
 Expression *Parser::parse(const std::string &expression) {
+    init();
+
     expr = new Expression();
 
     for(auto &x : expression) {
@@ -173,4 +171,10 @@ Parser::State Parser::errorHandle(char ch) {
 void Parser::pushCurrent(char ch, Token::Type type) {
     expr->addToken( Token(current, type) );
     current = ch;
+}
+
+void Parser::init() {
+    state = State::LeftBracketState;
+    bracketCount = 0;
+    current = "(";
 }

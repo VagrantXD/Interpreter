@@ -32,6 +32,8 @@ class Parser {
 
         void pushCurrent(char ch, Token::Type type);
 
+        void init();
+
     private:
         State state;
         std::vector< State (Parser::*)(char) > handles;

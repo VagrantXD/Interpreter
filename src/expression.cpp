@@ -37,60 +37,58 @@ double Expression::calculate() {
     auto it = tokens->begin();
     it++;
 
-    while( !stack.empty() ) {
-        if( it != tokens->end() ) {
-            if( it->getType() == Token::Type::Constant ) {
-                resultStack.push( std::stod( it->getValue() ) );
-                ++it;
-                continue;
-            } 
+    while( it != tokens->end() ) {
+        if( it->getType() == Token::Type::Constant ) {
+            resultStack.push( std::stod( it->getValue() ) );
+            ++it;
+            continue;
+        } // if 
 
-            if( it->getType() == Token::Type::LeftBracket ) {
-                stack.push(*it++);
-                continue;
-            }
+        if( it->getType() == Token::Type::LeftBracket ) {
+            stack.push(*it++);
+            continue;
+        } // if
 
-            if( it->getType() == Token::Type::RightBracket ) {
-                auto top = stack.top();
-                stack.pop();
-                while( top.getType() != Token::Type::LeftBracket ) {
-                    if( isOperatorOrFunc( top ) ) {       
-                        if( !counting(resultStack, top) ) {
-                            throw "Error!";
-                        }
+        if( it->getType() == Token::Type::RightBracket ) {
+            auto top = stack.top();
+            stack.pop();
+            while( top.getType() != Token::Type::LeftBracket ) {
+                if( isOperatorOrFunc( top ) ) {       
+                    if( !counting(resultStack, top) ) {
+                        throw "Error!";
                     }
-                    else {
-                        resultStack.push( std::stod( top.getValue() ) );
+                }
+                else {
+                    resultStack.push( std::stod( top.getValue() ) );
+                }
+                top = stack.top();
+                stack.pop();
+            }
+            it++;
+            continue;
+        } // if
+
+        if( isOperatorOrFunc( *it ) ) {
+            auto itPriority = (*operationPriority)[ it->getValue() ];
+            auto top = stack.top();
+
+            while( isOperatorOrFunc( *it ) ) { 
+                auto topPriority = (*operationPriority)[ top.getValue() ];
+                if(topPriority >= itPriority) {
+                    stack.pop();
+                    if( !counting( resultStack, top ) ) {
+                        throw "Error!";    
                     }
                     top = stack.top();
-                    stack.pop();
                 }
-                it++;
-                continue;
+                else {
+                    break; 
+                }
             }
+            stack.push( *it );
 
-            if( isOperatorOrFunc( *it ) ) {
-                auto itPriority = (*operationPriority)[ it->getValue() ];
-                auto top = stack.top();
-
-                while( isOperatorOrFunc( *it ) ) { 
-                    auto topPriority = (*operationPriority)[ top.getValue() ];
-                    if(topPriority >= itPriority) {
-                        stack.pop();
-                        if( !counting( resultStack, top ) ) {
-                            throw "Error!";    
-                        }
-                        top = stack.top();
-                    }
-                    else {
-                        break; 
-                    }
-                }
-                stack.push( *it );
-
-                it++;
-                continue;
-            } 
+            it++;
+            continue;
         } // if
     } // while
 

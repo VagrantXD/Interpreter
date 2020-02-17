@@ -7,24 +7,36 @@
 
 int main() {
     auto parser = new Parser;
-    std::string str;
 
-    std::getline(std::cin, str);
-    auto expr = parser->parse( str );
+    while(true) {
+        std::cout << "Введите выражение, или exit для выхода из приложения." << std::endl;
+        std::cout << "Ввод: ";
+        std::string str;
+        std::getline(std::cin, str);
 
-    if( !expr ) {
-        std::cout << "Error!" << std::endl;
+        if(str == "exit") break;
+
+        auto expr = parser->parse( str );
+
+        if( !expr ) {
+            std::cout << "Error!" << std::endl;
+            continue;
+        }
+
+        try {
+            double ans = expr->calculate();
+            std::cout << "Answer: " << ans << std::endl;
+        } catch(const char *e) {
+            std::cout << "Error, function not found!" << std::endl;
+            
+        } 
+
+        std::cout << std::endl;
+
+        delete expr;
     }
 
-    try {
-        double ans = expr->calculate();
-        std::cout << "Answer: " << ans << std::endl;
-    } catch(const char *e) {
-        std::cout << "Error, function not found!" << std::endl;
-    } 
-
     delete parser;
-    delete expr;
 
     return 0;
 }
