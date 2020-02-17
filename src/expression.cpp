@@ -30,9 +30,8 @@ Expression::~Expression() {
 }
 
 double Expression::calculate() {
-    auto expr = new Expression;
     std::stack< Token > stack;
-    std::stack< Token > resultStack;
+    std::stack< double > resultStack;
     stack.push( tokens->front() );
 
     auto it = tokens->begin();
@@ -41,7 +40,8 @@ double Expression::calculate() {
     while( !stack.empty() ) {
         if( it != tokens->end() ) {
             if( it->getType() == Token::Type::Constant ) {
-                expr->addToken(*it++);
+                resultStack.push( std::stod( it->getValue() ) );
+                ++it;
                 continue;
             } 
 
@@ -54,7 +54,14 @@ double Expression::calculate() {
                 auto top = stack.top();
                 stack.pop();
                 while( top.getType() != Token::Type::LeftBracket ) {
-                    expr->addToken( top );
+                    if( isOperatorOrFunc( top ) ) {       
+                        if( !counting(resultStack, top) ) {
+                            throw "Error!";
+                        }
+                    }
+                    else {
+                        resultStack.push( std::stod( top.getValue() ) );
+                    }
                     top = stack.top();
                     stack.pop();
                 }
@@ -62,19 +69,17 @@ double Expression::calculate() {
                 continue;
             }
 
-            bool operatorAndFunc = (it->getType() == Token::Type::Operator) ||
-                (it->getType() == Token::Type::Func) ||
-                (it->getType() == Token::Type::UnaryOperator);
-
-            if( operatorAndFunc ) {
+            if( isOperatorOrFunc( *it ) ) {
                 auto itPriority = (*operationPriority)[ it->getValue() ];
                 auto top = stack.top();
 
-                while( operatorAndFunc ) { 
+                while( isOperatorOrFunc( *it ) ) { 
                     auto topPriority = (*operationPriority)[ top.getValue() ];
-                    if(topPriority > itPriority) {
+                    if(topPriority >= itPriority) {
                         stack.pop();
-                        expr->addToken( top );
+                        if( !counting( resultStack, top ) ) {
+                            throw "Error!";    
+                        }
                         top = stack.top();
                     }
                     else {
@@ -86,56 +91,113 @@ double Expression::calculate() {
                 it++;
                 continue;
             } 
-
-            if( it->getType() == Token::Type::Func ) {
-                expr->addToken( *it++ );
-                continue;
-            }
         } // if
     } // while
 
-    for( auto &x : *expr->getTokens() )
-        std::cout << x.getValue() << " ";
-    std::cout << std::endl;
-
-    return 0.0;
+    return resultStack.top();
 }
 
 void Expression::addToken(const Token &token) {
     tokens->push_back( token );
 }
 
-void Expression::counting(std::stack< Token > &stack, const Token &currentOperator) {
-    auto first = std::stod( stack.top().getValue() );
-    stack.pop();
+bool Expression::counting(std::stack< double > &stack, const Token &currentOperator) {
+
+    double first = 0;
+    if( !stack.empty() ) { 
+        first = stack.top();
+        stack.pop();
+    }
 
     if( currentOperator.getType() == Token::Type::Operator ) {
-        auto second = std::stod( stack.top().getValue() );
+        auto second = stack.top();
         stack.pop();
 
         if( currentOperator.getValue() == "+" ) {
-            stack.push( Token( std::to_string(first + second), Token::Type::Constant ) );
-            return;
+            stack.push( second + first );
+            return true;
         }
 
         if( currentOperator.getValue() == "-" ) {
-            stack.push( Token( std::to_string(first - second), Token::Type::Constant ) );
-            return;
+            stack.push( second - first );
+            return true;
         }
 
         if( currentOperator.getValue() == "*" ) {
-            stack.push( Token( std::to_string(first * second), Token::Type::Constant ) );
-            return;
+            stack.push( second * first );
+            return true;
         }
 
         if( currentOperator.getValue() == "/" ) {
-            stack.push( Token( std::to_string(first * second), Token::Type::Constant ) );
-            return;
+            stack.push( second / first );
+            return true;
         }
 
         if( currentOperator.getValue() == "^" ) {
-            stack.push( Token( std::to_string( std::pow(first, second) ), Token::Type::Constant ) );
-            return;
+            stack.push( std::pow(second, first) );
+            return true;
         }
     }
+
+    if( currentOperator.getType() == Token::Type::UnaryOperator ) {
+        if( currentOperator.getValue() == "+" ) {
+            stack.push( +first );
+            return true;
+        }
+
+        if( currentOperator.getValue() == "-" ) {
+            stack.push( -first ); 
+            return true;
+        }
+    } 
+
+    if( currentOperator.getType() == Token::Type::Func ) {
+        if( currentOperator.getValue() == "sin" ) {
+            stack.push( std::sin(first) );
+            return true;
+        }
+
+        if( currentOperator.getValue() == "cos" ) {
+            stack.push( std::cos(first) );
+            return true;
+        }
+
+        if( currentOperator.getValue() == "tg" ) {
+            stack.push( std::tan(first) );
+            return true;
+        }
+
+        if( currentOperator.getValue() == "ctg" ) {
+            stack.push( std::cos(first) / std::sin(first) );
+            return true;
+        }
+
+        if( currentOperator.getValue() == "atg" ) {
+            stack.push( std::atan(first) );
+            return true;
+        }
+
+        if( currentOperator.getValue() == "exp" ) {
+            stack.push( std::exp(first) );
+            return true;
+        }
+
+        if( currentOperator.getValue() == "ln" ) {
+            stack.push( std::log(first) );
+            return true;
+        }
+
+        if( currentOperator.getValue() == "abs" ) {
+            stack.push( std::abs(first) );
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool Expression::isOperatorOrFunc(const Token &token) const {
+    return ( token.getType() == Token::Type::Operator ) ||
+        ( token.getType() == Token::Type::UnaryOperator ) ||
+        ( token.getType() == Token::Type::Func );
 }

@@ -23,7 +23,9 @@ class Expression {
         const std::vector< Token > *getTokens() const { return tokens; }
     
     private:
-        void counting(std::stack< Token > &stack, const Token &currentOperator);
+        bool counting(std::stack< double > &stack, const Token &currentOperator);
+
+        bool isOperatorOrFunc(const Token &token) const;
 
     private:
         std::vector< Token > *tokens;
